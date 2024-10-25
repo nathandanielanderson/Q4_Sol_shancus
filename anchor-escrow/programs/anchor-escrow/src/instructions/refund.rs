@@ -59,7 +59,7 @@ impl<'info> Refund<'info> {
 
         let cpi_accounts = CloseAccount{
             account: self.vault.to_account_info(),
-            destination: self.maker_ata_a.to_account_info(),
+            destination: self.maker.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
 
