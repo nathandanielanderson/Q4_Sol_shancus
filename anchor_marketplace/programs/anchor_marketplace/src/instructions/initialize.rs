@@ -47,6 +47,8 @@ impl<'info> Initialize<'info> {
             treasury_bump: bumps.treasury,
             reward_bump: bumps.rewards,
             name,
-        })?;
+        });
+
+        Ok(())
     }
 }
