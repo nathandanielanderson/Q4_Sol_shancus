@@ -4,13 +4,21 @@ import { DpTestCpi } from "../target/types/dp_test_cpi";
 
 describe("dp_test_cpi", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
 
   const program = anchor.workspace.DpTestCpi as Program<DpTestCpi>;
 
-  it("Is initialized!", async () => {
+  it("Logs a message to Solana!", async () => {
     // Add your test here.
-    const tx = await program.methods.initialize().rpc();
+    const message = "Hello from Typescript!";
+    const tx = await program.methods
+      .logMessage(message)
+      .accounts({
+        signer: provider.wallet.publicKey,
+      })
+      .rpc();
+
     console.log("Your transaction signature", tx);
   });
 });
