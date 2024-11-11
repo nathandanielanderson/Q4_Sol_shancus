@@ -4,7 +4,6 @@ declare_id!("2r9AvbDhiTq9dcAojVmJgnxZX3AH7nsycL6WXtPPqNW4");
 
 #[program]
 pub mod dp_test_cpi {
-    use anchor_lang::solana_program::message;
 
     use super::*;
 
