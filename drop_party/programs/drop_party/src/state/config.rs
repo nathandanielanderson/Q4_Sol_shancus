@@ -11,5 +11,9 @@ pub struct PlayerPDA {
 } 
 
 impl GamePDA {
-    pub const LEN: 8 + PUBKEY_L;
+    pub const LEN: usize = 8 + PUBKEY_L;
+}
+
+impl PlayerPDA {
+    pub const LEN: usize = 8 + PUBKEY_L;
 }

@@ -82,7 +82,7 @@ impl<'info> Deposit<'info> {
 
         assert_not_expired!(expiration);
 
-        assert_non_zero!(ammount, max_x, max_y);
+        assert_not_zero!(ammount, max_x, max_y);
 
         let (x,y) = match self.mint_lp.supply == 0
             && self.vault_x.amount == 0
@@ -108,6 +108,7 @@ impl<'info> Deposit<'info> {
             self.deposit_tokens(false, y)?;
 
             self.mint_lp_tokens(ammount)?;
+        Ok(())
     }
 
     pub fn deposit_tokens(&mut self, is_x: bool, ammount: u64,) -> Result<()> {
@@ -141,6 +142,7 @@ impl<'info> Deposit<'info> {
         let ctx = CpiContext::new(self.token_program.to_account_info(), cpi_accounts);
 
         transfer_checked(ctx, ammount, 6)?;
+        ok(())
     }
 
     pub fn mint_lp_tokens(&self, ammount: u64) -> Result<()> {
@@ -149,9 +151,10 @@ impl<'info> Deposit<'info> {
             to: self.provider_lp.to_account_info(),
             authority: self.auth.to_account_info(),
         };
-        let seeds: &[&[u8]; 2] = &[b"auth"[..], &[self.config.auth_bump]];
+        let seeds: &[&[u8]; 2] = &[b"auth",[..], &[self.config.auth_bump]];
         let signer_seeds: &[&[&[u8]]; 1] = &[&seeds[..]];
 
         let ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), accounts, signer_seeds);
+        Ok(())
     }
 }
