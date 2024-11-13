@@ -5,8 +5,13 @@ use crate::error::ErrorCode;
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    #[account(
+        mut,
+        seeds = [b"player", player.username.as_bytes()],
+        bump,
+    )]
+    pub player: Account<'info, Player>,
     #[account(mut)]
-    pub player: Signer<'info>,
     pub game: Account<'info, Game>,
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(
@@ -16,7 +21,8 @@ pub struct Withdraw<'info> {
     )]
     pub player_ata: InterfaceAccount<'info, TokenAccount>,
     #[account(
-    mut,
+    init_if_needed,
+    payer = player,
     associated_token::mint = mint,
     associated_token::authority = game,
     )]
@@ -30,6 +36,9 @@ pub struct Withdraw<'info> {
 impl<'info> Withdraw<'info> {
     pub fn withdraw_to_game(&mut self, amount: u64) -> Result<()> {
 
+       
+        let signer_seeds: [&[&[u8]]; 1] = [&[b"player", self.player.username.as_bytes(), &[self.player.bump]]];
+        
          // Check that the amount is greater than zero
         require!(amount > 0, ErrorCode::ZeroBalance);
 
@@ -48,7 +57,7 @@ impl<'info> Withdraw<'info> {
             authority: self.player.to_account_info(),
         };
 
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, &signer_seeds);
         
         transfer_checked(cpi_ctx, amount, self.mint.decimals)?;
 

@@ -7,11 +7,13 @@ use crate::constants::*;
 pub struct Game {
     pub authority: Pubkey,
     pub name: String,
+    pub bump: u8,
 }
 #[account]
 pub struct World {
     pub authority: Pubkey,
     pub name: String,
+    pub bump: u8,
 }
 #[account]
 pub struct Player {
@@ -20,6 +22,7 @@ pub struct Player {
     pub x_pos: u64, // Unity uses 6 decimal places
     pub y_pos: u64,
     pub z_pos: u64,
+    pub bump: u8,
 } 
 
 impl Game {
@@ -43,5 +46,6 @@ impl Player {
     MAX_NAME_L+
     8 + // x_pos
     8 + // y_pos
-    8;  // z_pos
+    8 + // z_pos
+    1;  // bump
 }

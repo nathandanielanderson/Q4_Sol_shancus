@@ -27,16 +27,18 @@ pub struct InitGame<'info> {
 }
 
 impl<'info> InitGame<'info> {
-    pub fn initialize_game(&mut self, game_name: String, world_name: String) -> Result<()> {
+    pub fn initialize_game(&mut self, game_name: String, world_name: String, bumps: &InitGameBumps) -> Result<()> {
        
         self.game.set_inner(Game {
             authority: *self.user.key,
             name: game_name,
+            bump: bumps.game
         });
 
         self.world.set_inner(World {
             authority: self.game.key(),
             name: world_name,
+            bump: bumps.world 
         });
 
         Ok(())

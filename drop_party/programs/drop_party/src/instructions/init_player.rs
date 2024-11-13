@@ -19,7 +19,7 @@ pub struct InitPlayer<'info> {
 }
 
 impl<'info> InitPlayer<'info> {
-    pub fn initialize_game(&mut self, player_name: String) -> Result<()> {
+    pub fn initialize_game(&mut self, player_name: String, bumps: &InitPlayerBumps) -> Result<()> {
        
         self.player.set_inner(Player {
             authority: *self.user.key,
@@ -27,7 +27,9 @@ impl<'info> InitPlayer<'info> {
             x_pos: 0,
             y_pos: 0,
             z_pos: 0,
+            bump: bumps.player,
         });
+        
         Ok(())
     }
 }
