@@ -12,21 +12,21 @@ pub struct Pickup<'info> {
     )]
     pub player: Account<'info, Player>,
     #[account(mut)]
-    pub game: Account<'info, Game>,
+    pub world: Account<'info, World>,
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(
-    mut,
+    init_if_needed,
+    payer = world,
     associated_token::mint = mint,
     associated_token::authority = player,
     )]
     pub player_ata: InterfaceAccount<'info, TokenAccount>,
     #[account(
-    init_if_needed,
-    payer = player,
+    mut,
     associated_token::mint = mint,
-    associated_token::authority = game,
+    associated_token::authority = world,
     )]
-    pub game_ata: InterfaceAccount<'info, TokenAccount>,
+    pub world_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -36,7 +36,7 @@ pub struct Pickup<'info> {
 impl<'info> Pickup<'info> {
     pub fn pickup_token(&mut self, amount: u64) -> Result<()> {
        
-        let signer_seeds: [&[&[u8]]; 1] = [&[b"game", self.world.name.as_bytes(), &[self.player.bump]]];
+        let signer_seeds: [&[&[u8]]; 1] = [&[b"world", self.world.name.as_bytes(), &[self.player.bump]]];
         
          // Check that the amount is greater than zero
         require!(amount > 0, ErrorCode::ZeroBalance);
@@ -50,7 +50,7 @@ impl<'info> Pickup<'info> {
         let cpi_program = self.token_program.to_account_info();
 
         let cpi_accounts = TransferChecked {
-            from: self.game_ata.to_account_info(),
+            from: self.world_ata.to_account_info(),
             mint: self.mint.to_account_info(),
             to: self.player_ata.to_account_info(),
             authority: self.player.to_account_info(),

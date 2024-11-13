@@ -6,8 +6,11 @@ use crate::constants::*;
 #[account]
 pub struct Game {
     pub authority: Pubkey,
+    pub wallet: Pubkey,
+    pub wallet_bump: u8,
     pub name: String,
     pub bump: u8,
+    
 }
 #[account]
 pub struct World {
