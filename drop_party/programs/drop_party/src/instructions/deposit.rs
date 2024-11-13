@@ -4,7 +4,7 @@ use crate::state::config::*;
 use crate::error::ErrorCode;
 
 #[derive(Accounts)]
-pub struct Withdraw<'info> {
+pub struct Deposit<'info> {
     #[account(
         mut,
         seeds = [b"player", player.username.as_bytes()],
@@ -33,9 +33,8 @@ pub struct Withdraw<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Withdraw<'info> {
-    pub fn withdraw_to_game(&mut self, amount: u64) -> Result<()> {
-
+impl<'info> Deposit<'info> {
+    pub fn deposit_to_wallet(&mut self, amount: u64) -> Result<()> {
        
         let signer_seeds: [&[&[u8]]; 1] = [&[b"player", self.player.username.as_bytes(), &[self.player.bump]]];
         
@@ -51,9 +50,9 @@ impl<'info> Withdraw<'info> {
         let cpi_program = self.token_program.to_account_info();
 
         let cpi_accounts = TransferChecked {
-            from: self.player_ata.to_account_info(),
+            from: self.game_ata.to_account_info(),
             mint: self.mint.to_account_info(),
-            to: self.game_ata.to_account_info(),
+            to: self.player_ata.to_account_info(),
             authority: self.player.to_account_info(),
         };
 
