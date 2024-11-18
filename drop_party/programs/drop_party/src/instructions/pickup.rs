@@ -11,12 +11,21 @@ pub struct Pickup<'info> {
         bump,
     )]
     pub player: Account<'info, Player>,
-    #[account(mut)]
+    #[account(
+        seeds = [b"game", game.name.as_bytes()],
+        bump
+    )]
+    pub game: Account<'info, Game>,
+    #[account(
+        mut,
+        seeds = [b"world",game.key().as_ref(), world.name.as_bytes()],
+        bump,
+    )]
     pub world: Account<'info, World>,
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(
     init_if_needed,
-    payer = world,
+    payer = player,
     associated_token::mint = mint,
     associated_token::authority = player,
     )]
@@ -24,7 +33,7 @@ pub struct Pickup<'info> {
     #[account(
     mut,
     associated_token::mint = mint,
-    associated_token::authority = world,
+    associated_token::authority = player,
     )]
     pub world_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -36,14 +45,13 @@ pub struct Pickup<'info> {
 impl<'info> Pickup<'info> {
     pub fn pickup_token(&mut self, amount: u64) -> Result<()> {
        
-        let signer_seeds: [&[&[u8]]; 1] = [&[b"world", self.world.name.as_bytes(), &[self.player.bump]]];
-        
+       
          // Check that the amount is greater than zero
         require!(amount > 0, ErrorCode::ZeroBalance);
 
-        // Ensure player has enough balance in their ATA
+        // Ensure world has enough balance in its ATA
         require!(
-            self.player_ata.amount >= amount,
+            self.world_ata.amount >= amount,
             ErrorCode::InsufficientBalance
         );
 
@@ -53,10 +61,10 @@ impl<'info> Pickup<'info> {
             from: self.world_ata.to_account_info(),
             mint: self.mint.to_account_info(),
             to: self.player_ata.to_account_info(),
-            authority: self.player.to_account_info(),
+            authority: self.world.to_account_info(),
         };
 
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, &signer_seeds);
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
         transfer_checked(cpi_ctx, amount, self.mint.decimals)?;
 

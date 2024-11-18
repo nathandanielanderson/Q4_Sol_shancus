@@ -4,15 +4,24 @@ use crate::state::config::*;
 use crate::error::ErrorCode;
 
 #[derive(Accounts)]
-pub struct Pickup<'info> {
+pub struct Drop<'info> {
     #[account(
         mut,
         seeds = [b"player", player.username.as_bytes()],
         bump,
     )]
     pub player: Account<'info, Player>,
-    #[account(mut)]
+    #[account(
+        seeds = [b"game", game.name.as_bytes()],
+        bump
+    )]
     pub game: Account<'info, Game>,
+    #[account(
+        mut,
+        seeds = [b"world",game.key().as_ref(), world.name.as_bytes()],
+        bump,
+    )]
+    pub world: Account<'info, World>,
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(
     mut,
@@ -22,22 +31,21 @@ pub struct Pickup<'info> {
     pub player_ata: InterfaceAccount<'info, TokenAccount>,
     #[account(
     init_if_needed,
-    payer = player,
+    payer = world,
     associated_token::mint = mint,
-    associated_token::authority = game,
+    associated_token::authority = player,
     )]
-    pub game_ata: InterfaceAccount<'info, TokenAccount>,
+    pub world_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Pickup<'info> {
-    pub fn pickup_token(&mut self, amount: u64) -> Result<()> {
+impl<'info> Drop<'info> {
+    pub fn drop_token(&mut self, amount: u64) -> Result<()> {
        
-        let signer_seeds: [&[&[u8]]; 1] = [&[b"game", self.world.name.as_bytes(), &[self.player.bump]]];
-        
+       
          // Check that the amount is greater than zero
         require!(amount > 0, ErrorCode::ZeroBalance);
 
@@ -50,13 +58,13 @@ impl<'info> Pickup<'info> {
         let cpi_program = self.token_program.to_account_info();
 
         let cpi_accounts = TransferChecked {
-            from: self.game_ata.to_account_info(),
+            from: self.player_ata.to_account_info(),
             mint: self.mint.to_account_info(),
-            to: self.player_ata.to_account_info(),
+            to: self.world_ata.to_account_info(),
             authority: self.player.to_account_info(),
         };
 
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, &signer_seeds);
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
         transfer_checked(cpi_ctx, amount, self.mint.decimals)?;
 
