@@ -18,6 +18,10 @@ pub mod drop_party {
         msg!("Greetings from: {:?}", ctx.program_id);
         Ok(())
     }
+
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        Deposit::deposit_token(ctx, amount)
+    }
 }
 
 #[derive(Accounts)]
