@@ -3,3 +3,4 @@ pub mod init_drop;
 pub mod init_player;
 pub mod deposit;
 pub mod withdraw;
+pub mod player_withdraw;
