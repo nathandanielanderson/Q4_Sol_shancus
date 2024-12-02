@@ -12,6 +12,4 @@ pub enum ErrorCode {
     ZeroBalance,
     #[msg("Unauthorized access.")]
     UnauthorizedAccess,
-    #[msg("Failed to decode the provided Pubkey string")]
-    FailedToDecodePubkey,
 }
