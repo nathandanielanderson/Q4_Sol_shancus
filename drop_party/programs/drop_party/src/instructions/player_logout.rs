@@ -6,7 +6,10 @@ use crate::state::config::*;
 pub struct PlayerLogout<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        has_one = authority @ ErrorCode::UnauthorizedAccess,
+    )]
     pub player: Account<'info, Player>,
 
     pub system_program: Program<'info, System>,
