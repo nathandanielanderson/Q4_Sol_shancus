@@ -10,4 +10,6 @@ pub enum ErrorCode {
     InsufficientBalance,
     #[msg("The transfer amount must be greater than zero.")]
     ZeroBalance,
+    #[msg("Unauthorized access.")]
+    UnauthorizedAccess,
 }

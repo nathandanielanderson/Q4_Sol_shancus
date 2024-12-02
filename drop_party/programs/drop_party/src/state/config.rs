@@ -31,7 +31,7 @@ impl Player {
     pub const LEN: usize = 
     8 + 
     PUBKEY_L + 
-    MAX_NAME_L+
+    MAX_NAME_L +
     8 + // x_pos
     8 + // y_pos
     8 + // z_pos
