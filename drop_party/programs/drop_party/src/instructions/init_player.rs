@@ -27,6 +27,7 @@ impl<'info> InitPlayer<'info> {
             x_pos: 0,
             y_pos: 0,
             z_pos: 0,
+            coins: 0,
             bump: bumps.player,
         });
         

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token::{close_account, CloseAccount},associated_token::AssociatedToken, token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked, transfer_checked}};
+use anchor_spl::{associated_token::AssociatedToken, token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked, transfer_checked}};
 use crate::{constants::MINT_ID, state::config::*};
 use crate::error::ErrorCode;
 
@@ -67,7 +67,7 @@ impl<'info> InitDrop<'info> {
         // Execute the transfer
         transfer_checked(cpi_ctx, amount, self.mint.decimals)?;
 
-
+        
         Ok(())
     }
 }
