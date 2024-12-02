@@ -21,6 +21,9 @@ pub struct InitPlayer<'info> {
 impl<'info> InitPlayer<'info> {
     pub fn initialize_game(&mut self, player_name: String, bumps: &InitPlayerBumps) -> Result<()> {
        
+        msg!("Initializing player: {}", player_name);
+        msg!("Player PDA: {}", self.player.key());
+
         self.player.set_inner(Player {
             authority: *self.user.key,
             username: player_name,

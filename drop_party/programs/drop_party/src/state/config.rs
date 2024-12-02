@@ -3,15 +3,6 @@ use anchor_lang::prelude::*;
 use crate::constants::*;
 
 #[account]
-pub struct Game {
-    pub authority: Pubkey,
-    pub wallet: Pubkey,
-    pub wallet_bump: u8,
-    pub name: String,
-    pub bump: u8,
-    
-}
-#[account]
 pub struct World {
     pub authority: Pubkey,
     pub name: String,
@@ -27,14 +18,6 @@ pub struct Player {
     pub coins: u64, // The amount of coins the player has in-game
     pub bump: u8,
 } 
-
-impl Game {
-    pub const LEN: usize = 
-    8 + 
-    PUBKEY_L + 
-    PUBKEY_L + 
-    MAX_NAME_L;
-}
 
 impl World {
     pub const LEN: usize = 
