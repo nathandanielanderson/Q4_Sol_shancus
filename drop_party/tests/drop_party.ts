@@ -9,6 +9,37 @@ describe("drop_party", () => {
   const program = anchor.workspace.DropParty as Program<DropParty>;
   const wallet = anchor.AnchorProvider.env().wallet;
 
+  it("Initializes a world", async () => {
+    const worldName = "test_player";
+
+    // Derive the PDA for the player account
+    const [worldPda, _worldBump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("world"), Buffer.from(worldName)],
+      program.programId
+    );
+
+    // Call the init_player instruction
+    const tx = await program.methods
+      .initWorld(worldName)
+      .accountsStrict({
+        admin: wallet.publicKey, // Wallet creating the player
+        world: worldPda, // Derived PDA for the player account
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log("Transaction signature:", tx);
+
+    // Fetch the player account to verify initialization
+    const worldAccount = await program.account.world.fetch(worldPda);
+
+    // Assertions to validate the state of the player account
+    console.log("World account data:", worldAccount);
+    assert.equal(worldAccount.authority.toBase58(), wallet.publicKey.toBase58());
+    assert.equal(worldAccount.name, worldName);
+    assert.ok(worldAccount.bump !== undefined); // Ensure bump is set
+  });
+
   it("Initializes a player", async () => {
     const playerUsername = "test_player";
 
