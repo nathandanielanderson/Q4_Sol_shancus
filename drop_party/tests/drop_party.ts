@@ -13,12 +13,14 @@ describe("drop_party", () => {
   //~~~~~~~~Test arguments~~~~~~~~~~~~~
   const worldName = "test_world";
   const playerUsername = "test_player";
-  const dropAmount = new BN(100);
-  const MINT_ID = [
-    0x2F, 0x67, 0x7A, 0x6D, 0x6C, 0x72, 0x50, 0x77, 0x44, 0x62, 0x61, 0x48, 0x41, 0x62, 0x44, 0x4A,
-    0x68, 0x71, 0x34, 0x79, 0x68, 0x48, 0x6B, 0x54, 0x54, 0x55, 0x79, 0x58, 0x63, 0x39, 0x55, 0x41,
-  ]; // Pubkey: 2Gz6trPwDbaHAbDJhq4yhHkTTUyXc9UAkfpEjFuRK5Si (test token mint)
+  const dropAmount = 100;
+  const dropAmountBN = new BN(dropAmount);
+
+  const MINT_ID = [0x2F, 0x67, 0x7A, 0x6D, 0x6C, 0x72, 0x50, 0x77, 0x44, 0x62, 0x61, 0x48, 0x41, 0x62, 0x44, 0x4A,
+    0x68, 0x71, 0x34, 0x79, 0x68, 0x48, 0x6B, 0x54, 0x54, 0x55, 0x79, 0x58, 0x63, 0x39, 0x55, 0x41,];
+  // Pubkey: 2Gz6trPwDbaHAbDJhq4yhHkTTUyXc9UAkfpEjFuRK5Si (test token mint)
   const MINT_DECIMALS = 9;
+  let playerCoins = 0; //in-game coin balance state
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   it("Initializes a world", async () => {
@@ -72,7 +74,7 @@ describe("drop_party", () => {
 
     // Call the init_drop instruction
     const tx = await program.methods
-      .initDrop(worldName, dropAmount)
+      .initDrop(worldName, dropAmountBN)
       .accountsStrict({
         admin: wallet.publicKey,
         mint: new anchor.web3.PublicKey(MINT_ID),
@@ -87,14 +89,16 @@ describe("drop_party", () => {
 
     console.log("Transaction signature:", tx);
 
-    // Fetch the player account to verify initialization
-    const worldAccount = await program.account.world.fetch(worldPda);
+    // Fetch and verify the world_ata balance
+    const worldAtaAccount = await program.provider.connection.getTokenAccountBalance(worldAta);
+    console.log("World ATA balance:", worldAtaAccount.value.uiAmount);
 
-    // Assertions to validate the state of the player account
-    console.log("World account data:", worldAccount);
-    assert.equal(worldAccount.authority.toBase58(), wallet.publicKey.toBase58());
-    assert.equal(worldAccount.name, worldName);
-    assert.ok(worldAccount.bump !== undefined); // Ensure bump is set
+    // Assertions
+    assert.equal(
+      worldAtaAccount.value.uiAmount,
+      dropAmount / Math.pow(10, MINT_DECIMALS), // Adjust for decimals
+      "World ATA balance should match the transferred amount"
+    );
   });
 
   it("Initializes a player", async () => {
@@ -125,6 +129,10 @@ describe("drop_party", () => {
     assert.equal(playerAccount.authority.toBase58(), wallet.publicKey.toBase58());
     assert.equal(playerAccount.username, playerUsername);
     assert.ok(playerAccount.bump !== undefined); // Ensure bump is set
+  });
+
+  it("Logs player out and updates state", async () => {
+
   });
 
 });
