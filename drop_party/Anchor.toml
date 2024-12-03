@@ -4,14 +4,14 @@
 resolution = true
 skip-lint = false
 
-[programs.localnet]
+[programs.devnet]
 drop_party = "37yRf2iJ11DyNyreMCbGxLGhzWSTpr5MRZAJmK8JdCzx"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"  # Change Localnet to Devnet
 wallet = "~/.config/solana/id.json"
 
 [scripts]
