@@ -178,8 +178,6 @@ describe("drop_party", () => {
   });
 
   it("Withdraws player's coins", async () => {
-
-
     // Derive the PDA for the player account
     const [playerPda, _playerBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("player"), Buffer.from(playerUsername)],
@@ -188,6 +186,7 @@ describe("drop_party", () => {
 
     // Fetch the original player account
     const pretestPlayerAccount = await program.account.player.fetch(playerPda);
+    console.log("Pretest Player Account:", pretestPlayerAccount);
 
     // Derive the PDA for the world account
     const [worldPda, _worldBump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -201,23 +200,19 @@ describe("drop_party", () => {
       owner: wallet.publicKey,
     });
 
-    // Fetch and store the pretest ATA balance
-    const pretestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
-    const pretestUserAtaUiAmount = pretestUserAtaBalance.value.uiAmount; // Store as human-readable amount
-
-
-
     const worldAta = await anchor.utils.token.associatedAddress({
       mint: new anchor.web3.PublicKey(MINT_ID),
       owner: worldPda,
     });
 
-    // Fetch and store the pretest ATA balance
+    // Fetch and store the pretest balances
+    const pretestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
     const pretestWorldAtaBalance = await program.provider.connection.getTokenAccountBalance(worldAta);
-    const pretestWorldAtaUiAmount = pretestWorldAtaBalance.value.uiAmount; // Store as human-readable amount
 
+    console.log("Pretest User ATA Balance:", pretestUserAtaBalance.value.uiAmount);
+    console.log("Pretest World ATA Balance:", pretestWorldAtaBalance.value.uiAmount);
 
-    // Call the init_drop instruction
+    // Call the playerWithdraw instruction
     const tx = await program.methods
       .playerWithdraw(worldName, withdrawAmountBN)
       .accountsStrict({
@@ -234,14 +229,16 @@ describe("drop_party", () => {
 
     console.log("Transaction signature:", tx);
 
-    // Fetch the updated user_ata balance
-    const userAtaAccount = await program.provider.connection.getTokenAccountBalance(userAta);
+    // Fetch the updated balances
+    const posttestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
+    const posttestWorldAtaBalance = await program.provider.connection.getTokenAccountBalance(worldAta);
 
-    // Fetch the updated world_ata balance
-    const worldAtaAccount = await program.provider.connection.getTokenAccountBalance(worldAta);
+    console.log("Posttest User ATA Balance:", posttestUserAtaBalance.value.uiAmount);
+    console.log("Posttest World ATA Balance:", posttestWorldAtaBalance.value.uiAmount);
 
     // Fetch the updated player account
     const playerAccount = await program.account.player.fetch(playerPda);
+    console.log("Posttest Player Account:", playerAccount);
 
     // Assertions
     // Player coins should be decremented by the withdrawn amount
@@ -253,15 +250,15 @@ describe("drop_party", () => {
 
     // User ATA balance should increase by the withdrawn amount
     assert.equal(
-      userAtaAccount.value.uiAmount,
-      pretestUserAtaUiAmount + withdrawAmount / Math.pow(10, MINT_DECIMALS),
+      posttestUserAtaBalance.value.uiAmount,
+      pretestUserAtaBalance.value.uiAmount + withdrawAmount / Math.pow(10, MINT_DECIMALS),
       "User ATA balance should match original balance plus withdrawal amount"
     );
 
     // World ATA balance should decrease by the withdrawn amount
     assert.equal(
-      worldAtaAccount.value.uiAmount,
-      pretestWorldAtaUiAmount - withdrawAmount / Math.pow(10, MINT_DECIMALS),
+      posttestWorldAtaBalance.value.uiAmount,
+      pretestWorldAtaBalance.value.uiAmount - withdrawAmount / Math.pow(10, MINT_DECIMALS),
       "World ATA balance should match original balance minus withdrawal amount"
     );
   });
