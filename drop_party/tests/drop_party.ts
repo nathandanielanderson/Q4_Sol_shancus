@@ -28,7 +28,9 @@ describe("drop_party", () => {
   const logoutCoinsBN = new BN(logoutCoins); // initialCoins = 0;
 
   const withdrawAmount = 10;
-  const withdrawAmountBN = new BN(withdrawAmount);
+  const withdrawAmountBN = new anchor.BN(withdrawAmount).mul(
+    new anchor.BN(Math.pow(10, MINT_DECIMALS))
+  );
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   it("Initializes a world", async () => {
@@ -242,9 +244,26 @@ describe("drop_party", () => {
     const playerAccount = await program.account.player.fetch(playerPda);
 
     // Assertions
-    assert.equal(playerAccount.coins.toNumber(), pretestPlayerAccount.coins.toNumber() - withdrawAmount, "Player in-game coins should be updated to reflect withdrawal");
-    assert.equal(userAtaAccount.value.uiAmount, pretestUserAtaUiAmount + withdrawAmount, "User ATA balance should match orginal balance plus withdrawl amount");
-    assert.equal(worldAtaAccount.value.uiAmount, pretestWorldAtaUiAmount - withdrawAmount, "World ATA balance should match orginal balance minus withdrawl amount");
+    // Player coins should be decremented by the withdrawn amount
+    assert.equal(
+      playerAccount.coins.toNumber(),
+      pretestPlayerAccount.coins.toNumber() - withdrawAmount,
+      "Player in-game coins should be updated to reflect withdrawal"
+    );
+
+    // User ATA balance should increase by the withdrawn amount
+    assert.equal(
+      userAtaAccount.value.uiAmount,
+      pretestUserAtaUiAmount + withdrawAmount / Math.pow(10, MINT_DECIMALS),
+      "User ATA balance should match original balance plus withdrawal amount"
+    );
+
+    // World ATA balance should decrease by the withdrawn amount
+    assert.equal(
+      worldAtaAccount.value.uiAmount,
+      pretestWorldAtaUiAmount - withdrawAmount / Math.pow(10, MINT_DECIMALS),
+      "World ATA balance should match original balance minus withdrawal amount"
+    );
   });
 
 });
