@@ -209,7 +209,6 @@ describe("drop_party", () => {
 
     // Fetch the original player account
     const pretestPlayerAccount = await program.account.player.fetch(playerPda);
-    console.log("Pretest Player Account:", pretestPlayerAccount);
 
     // Derive the PDA for the world account
     const [worldPda, _worldBump] = anchor.web3.PublicKey.findProgramAddressSync(
