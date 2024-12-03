@@ -7,7 +7,7 @@ pub struct InitWorld<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(
-        init,
+        init_if_needed,
         payer = admin,
         space = World::LEN,
         seeds = [b"world", world_name.as_bytes()],

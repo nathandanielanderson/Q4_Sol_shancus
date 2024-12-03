@@ -21,7 +21,7 @@ describe("drop_party", () => {
     // Call the init_player instruction
     const tx = await program.methods
       .initPlayer(playerUsername)
-      .accounts({
+      .accountsStrict({
         user: wallet.publicKey, // Wallet creating the player
         player: playerPda, // Derived PDA for the player account
         systemProgram: anchor.web3.SystemProgram.programId,

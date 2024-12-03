@@ -7,7 +7,7 @@ pub struct InitPlayer<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
-        init,
+        init_if_needed,
         payer = user,
         space = Player::LEN,
         seeds = [b"player", player_name.as_bytes()],
