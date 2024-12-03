@@ -195,14 +195,25 @@ describe("drop_party", () => {
 
     // Derive user and world associated token accounts
     const userAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID), // Replace with actual MINT_ID
+      mint: new anchor.web3.PublicKey(MINT_ID),
       owner: wallet.publicKey,
     });
 
+    // Fetch and store the pretest ATA balance
+    const pretestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
+    const pretestUserAtaUiAmount = pretestUserAtaBalance.value.uiAmount; // Store as human-readable amount
+
+
+
     const worldAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID), // Replace with actual MINT_ID
+      mint: new anchor.web3.PublicKey(MINT_ID),
       owner: worldPda,
     });
+
+    // Fetch and store the pretest ATA balance
+    const pretestWorldAtaBalance = await program.provider.connection.getTokenAccountBalance(worldAta);
+    const pretestWorldAtaUiAmount = pretestWorldAtaBalance.value.uiAmount; // Store as human-readable amount
+
 
     // Call the init_drop instruction
     const tx = await program.methods
@@ -221,16 +232,19 @@ describe("drop_party", () => {
 
     console.log("Transaction signature:", tx);
 
-    // Fetch and verify the user_ata balance
+    // Fetch the updated user_ata balance
     const userAtaAccount = await program.provider.connection.getTokenAccountBalance(userAta);
-    console.log("User ATA balance:", userAtaAccount.value.uiAmount);
+
+    // Fetch the updated world_ata balance
+    const worldAtaAccount = await program.provider.connection.getTokenAccountBalance(worldAta);
 
     // Fetch the updated player account
     const playerAccount = await program.account.player.fetch(playerPda);
 
     // Assertions
-    assert.equal(playerAccount.coins, pretestPlayerAccount - playerAccount.coins, "Coins should be updated");
-
+    assert.equal(playerAccount.coins.toNumber(), pretestPlayerAccount.coins.toNumber() - withdrawAmount, "Player in-game coins should be updated to reflect withdrawal");
+    assert.equal(userAtaAccount.value.uiAmount, pretestUserAtaUiAmount + withdrawAmount, "User ATA balance should match orginal balance plus withdrawl amount");
+    assert.equal(worldAtaAccount.value.uiAmount, pretestWorldAtaUiAmount - withdrawAmount, "World ATA balance should match orginal balance minus withdrawl amount");
   });
 
 });
