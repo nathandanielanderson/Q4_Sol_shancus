@@ -24,7 +24,7 @@ pub struct InitDrop<'info> {
     #[account(
         mut,
         associated_token::mint = mint,
-        associated_token::authority = world,
+        associated_token::authority = admin,
     )]
     pub admin_ata: InterfaceAccount<'info, TokenAccount>,
 

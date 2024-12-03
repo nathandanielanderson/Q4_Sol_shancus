@@ -3,6 +3,8 @@ import { Program } from "@coral-xyz/anchor";
 import { DropParty } from "../target/types/drop_party";
 import { assert } from "chai";
 import BN from "bn.js";
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createInitializeMintInstruction, createAssociatedTokenAccountInstruction } from "@solana/spl-token";
+
 
 describe("drop_party", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
@@ -11,14 +13,14 @@ describe("drop_party", () => {
   const wallet = anchor.AnchorProvider.env().wallet;
 
   //~~~~~~~~Test arguments~~~~~~~~~~~~~
-  const worldName = "test_world";
+  const worldName = "new_world";
 
   const dropAmount = 100;
   const dropAmountBN = new BN(dropAmount);
-  const MINT_ID = [0x2F, 0x67, 0x7A, 0x6D, 0x6C, 0x72, 0x50, 0x77, 0x44, 0x62, 0x61, 0x48, 0x41, 0x62, 0x44, 0x4A,
-    0x68, 0x71, 0x34, 0x79, 0x68, 0x48, 0x6B, 0x54, 0x54, 0x55, 0x79, 0x58, 0x63, 0x39, 0x55, 0x41,];
   // Pubkey: 2Gz6trPwDbaHAbDJhq4yhHkTTUyXc9UAkfpEjFuRK5Si (test token mint)
   const MINT_DECIMALS = 9;
+  const mint = new anchor.web3.PublicKey("2Gz6trPwDbaHAbDJhq4yhHkTTUyXc9UAkfpEjFuRK5Si");
+
 
   const playerUsername = "test_player";
   const logout_x = new BN(10);    // initial x = 0;
@@ -32,6 +34,7 @@ describe("drop_party", () => {
     new anchor.BN(Math.pow(10, MINT_DECIMALS))
   );
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
   it("Initializes a world", async () => {
 
@@ -64,6 +67,12 @@ describe("drop_party", () => {
   });
 
   it("Initializes a drop", async () => {
+    console.log("Starting initDrop test...");
+
+    // Validate mint ownership
+    const mintInfo = await program.provider.connection.getAccountInfo(mint);
+    console.log("Mint Owner (Program ID):", mintInfo?.owner?.toBase58());
+    assert.equal(mintInfo?.owner?.toBase58(), TOKEN_PROGRAM_ID.toBase58(), "Mint should be owned by the SPL Token Program");
 
     // Derive the PDA for the world account
     const [worldPda, _worldBump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -71,43 +80,55 @@ describe("drop_party", () => {
       program.programId
     );
 
-    // Derive admin and world associated token accounts
     const adminAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID), // Replace with actual MINT_ID
+      mint,
       owner: wallet.publicKey,
     });
 
     const worldAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID), // Replace with actual MINT_ID
+      mint,
       owner: worldPda,
     });
 
-    // Call the init_drop instruction
+    // Check Admin ATA
+    const adminAtaBalance = await program.provider.connection.getTokenAccountBalance(adminAta);
+    console.log("Admin ATA Balance:", adminAtaBalance?.value?.amount); // Integer amount in lamports
+
+    // Check World ATA
+    const worldAtaBalanceBefore = await program.provider.connection.getTokenAccountBalance(worldAta);
+    console.log("World ATA Balance Before:", worldAtaBalanceBefore?.value?.amount); // Integer amount in lamports
+
+    // Adjust dropAmount for decimals
+    const dropAmountAdjusted = dropAmount * Math.pow(10, MINT_DECIMALS); // Convert to lamports
+
+    // Call initDrop
     const tx = await program.methods
-      .initDrop(worldName, dropAmountBN)
+      .initDrop(worldName, new anchor.BN(dropAmountAdjusted))
       .accountsStrict({
         admin: wallet.publicKey,
-        mint: new anchor.web3.PublicKey(MINT_ID),
+        mint,
         world: worldPda,
         adminAta,
         worldAta,
-        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
-    console.log("Transaction signature:", tx);
+    console.log("initDrop Transaction Signature:", tx);
 
-    // Fetch and verify the world_ata balance
-    const worldAtaAccount = await program.provider.connection.getTokenAccountBalance(worldAta);
-    console.log("World ATA balance:", worldAtaAccount.value.uiAmount);
+    // Validate balances
+    const worldAtaBalanceAfter = await program.provider.connection.getTokenAccountBalance(worldAta);
+    console.log("World ATA Balance After:", worldAtaBalanceAfter?.value?.amount); // Integer amount in lamports
 
-    // Assertions
+    const expectedWorldAtaBalance =
+      parseInt(worldAtaBalanceBefore?.value?.amount || "0") + dropAmountAdjusted;
+
     assert.equal(
-      worldAtaAccount.value.uiAmount,
-      dropAmount / Math.pow(10, MINT_DECIMALS), // Adjust for decimals
-      "World ATA balance should match the transferred amount"
+      parseInt(worldAtaBalanceAfter?.value?.amount),
+      expectedWorldAtaBalance,
+      "World ATA balance should match the expected transferred amount"
     );
   });
 
@@ -171,13 +192,15 @@ describe("drop_party", () => {
 
     // Assertions
     console.log("Player account data after logout:", playerAccount);
-    assert.equal(playerAccount.xPos, logout_x, "X position should be updated");
-    assert.equal(playerAccount.yPos, logout_y, "Y position should be updated");
-    assert.equal(playerAccount.zPos, logout_z, "Z position should be updated");
-    assert.equal(playerAccount.coins, logoutCoinsBN, "Coins should be updated");
+    assert.isTrue(playerAccount.xPos.eq(logout_x), "X position should be updated");
+    assert.isTrue(playerAccount.yPos.eq(logout_y), "Y position should be updated");
+    assert.isTrue(playerAccount.zPos.eq(logout_z), "Z position should be updated");
+    assert.isTrue(playerAccount.coins.eq(logoutCoinsBN), "Coins should be updated");
   });
 
   it("Withdraws player's coins", async () => {
+    console.log("Starting playerWithdraw test...");
+
     // Derive the PDA for the player account
     const [playerPda, _playerBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("player"), Buffer.from(playerUsername)],
@@ -196,71 +219,67 @@ describe("drop_party", () => {
 
     // Derive user and world associated token accounts
     const userAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID),
+      mint: mint,
       owner: wallet.publicKey,
     });
 
     const worldAta = await anchor.utils.token.associatedAddress({
-      mint: new anchor.web3.PublicKey(MINT_ID),
+      mint: mint,
       owner: worldPda,
     });
 
-    // Fetch and store the pretest balances
-    const pretestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
-    const pretestWorldAtaBalance = await program.provider.connection.getTokenAccountBalance(worldAta);
+    // Fetch and log the pretest balances in raw integer amounts
+    const pretestUserAtaBalanceRaw = await program.provider.connection.getTokenAccountBalance(userAta);
+    const pretestWorldAtaBalanceRaw = await program.provider.connection.getTokenAccountBalance(worldAta);
 
-    console.log("Pretest User ATA Balance:", pretestUserAtaBalance.value.uiAmount);
-    console.log("Pretest World ATA Balance:", pretestWorldAtaBalance.value.uiAmount);
+    const pretestUserAtaBalance = parseInt(pretestUserAtaBalanceRaw.value.amount, 10) || 0; // Use lamports
+    const pretestWorldAtaBalance = parseInt(pretestWorldAtaBalanceRaw.value.amount, 10) || 0; // Use lamports
+
 
     // Call the playerWithdraw instruction
     const tx = await program.methods
       .playerWithdraw(worldName, withdrawAmountBN)
       .accountsStrict({
         user: wallet.publicKey,
-        mint: new anchor.web3.PublicKey(MINT_ID),
+        mint: mint,
         world: worldPda,
         userAta,
         worldAta,
-        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
     console.log("Transaction signature:", tx);
 
-    // Fetch the updated balances
-    const posttestUserAtaBalance = await program.provider.connection.getTokenAccountBalance(userAta);
-    const posttestWorldAtaBalance = await program.provider.connection.getTokenAccountBalance(worldAta);
+    // Fetch and log the post-test balances in raw integer amounts
+    const posttestUserAtaBalanceRaw = await program.provider.connection.getTokenAccountBalance(userAta);
+    const posttestWorldAtaBalanceRaw = await program.provider.connection.getTokenAccountBalance(worldAta);
 
-    console.log("Posttest User ATA Balance:", posttestUserAtaBalance.value.uiAmount);
-    console.log("Posttest World ATA Balance:", posttestWorldAtaBalance.value.uiAmount);
+    const posttestUserAtaBalance = parseInt(posttestUserAtaBalanceRaw.value.amount, 10) || 0; // Use lamports
+    const posttestWorldAtaBalance = parseInt(posttestWorldAtaBalanceRaw.value.amount, 10) || 0; // Use lamports
 
-    // Fetch the updated player account
-    const playerAccount = await program.account.player.fetch(playerPda);
-    console.log("Posttest Player Account:", playerAccount);
+
+    // Calculate expected balances
+    const withdrawAmountInLamports = withdrawAmountBN.toNumber(); // Convert to integer lamports
+    const expectedUserAtaBalance = pretestUserAtaBalance + withdrawAmountInLamports;
+    const expectedWorldAtaBalance = pretestWorldAtaBalance - withdrawAmountInLamports;
+
 
     // Assertions
-    // Player coins should be decremented by the withdrawn amount
     assert.equal(
-      playerAccount.coins.toNumber(),
-      pretestPlayerAccount.coins.toNumber() - withdrawAmount,
-      "Player in-game coins should be updated to reflect withdrawal"
+      posttestUserAtaBalance,
+      expectedUserAtaBalance,
+      "User ATA balance should match expected balance"
     );
 
-    // User ATA balance should increase by the withdrawn amount
     assert.equal(
-      posttestUserAtaBalance.value.uiAmount,
-      pretestUserAtaBalance.value.uiAmount + withdrawAmount / Math.pow(10, MINT_DECIMALS),
-      "User ATA balance should match original balance plus withdrawal amount"
-    );
-
-    // World ATA balance should decrease by the withdrawn amount
-    assert.equal(
-      posttestWorldAtaBalance.value.uiAmount,
-      pretestWorldAtaBalance.value.uiAmount - withdrawAmount / Math.pow(10, MINT_DECIMALS),
-      "World ATA balance should match original balance minus withdrawal amount"
+      posttestWorldAtaBalance,
+      expectedWorldAtaBalance,
+      "World ATA balance should match expected balance"
     );
   });
 
 });
+

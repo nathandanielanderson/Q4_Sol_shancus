@@ -19,6 +19,7 @@ pub mod drop_party {
     }
 
     pub fn init_drop(ctx: Context<InitDrop>,world_name: String, amount: u64) -> Result<()> {
+        msg!("Mint PublicKey: {}", MINT_ID);
         ctx.accounts.initialize_drop(world_name, amount)
     }
 
