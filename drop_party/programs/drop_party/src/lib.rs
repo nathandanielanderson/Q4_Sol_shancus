@@ -13,11 +13,7 @@ declare_id!("37yRf2iJ11DyNyreMCbGxLGhzWSTpr5MRZAJmK8JdCzx");
 #[program]
 pub mod drop_party {
     use super::*;
-    pub fn init_player(ctx: Context<InitPlayer>, player_name: String) -> ProgramResult {
-        let bumps = InitPlayerBumps::get(ctx.accounts.system_program, &player_name);
-        ctx.accounts
-            .player
-            .initialize_player(player_name, &bumps)?;
-        Ok(())
+    pub fn init_world(ctx: Context<InitWorld>, world_name: String) -> Result<()> {
+        ctx.accounts.initialize_world(world_name, &InitWorldBumps::default())
     }
 }
