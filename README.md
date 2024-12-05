@@ -33,6 +33,7 @@ The Admin Wallet initializes the world by creating:
 ### Drop Initialization
 - A World ATA: The token account associated with the world for managing its balance.
 - Tokens are transferred to the World ATA, establishing the total token supply available for gameplay.
+- Coins rain down in the game, instantiating as many coins as token were made available until World ATA is empty.
 
 ### Player Initialization
 When a player joins:
@@ -46,7 +47,7 @@ When a player joins:
 
 ### Player Withdrawal
 Players can withdraw tokens from the game into their connected wallet:
-- A token transfer occurs from the World ATA to the player’s User ATA.
-- The World PDA tracks the remaining in-game token supply.
+- A token transfer occurs from the World ATA to the User Wallet ATA.
+- The in-game state tracks the remaining in-game tokens a player has.
 
 
