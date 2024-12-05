@@ -1,5 +1,10 @@
 # Drop Party Protocol
-## Devnet Program Address: `37yRf2iJ11DyNyreMCbGxLGhzWSTpr5MRZAJmK8JdCzx`
+#### Devnet Program Address: `37yRf2iJ11DyNyreMCbGxLGhzWSTpr5MRZAJmK8JdCzx`  
+  
+## Gameplay Demo
+![Raining Bonk](https://github.com/nathandanielanderson/Q4_Sol_shancus/raw/main/drop_party-demo.gif)  
+
+## Drop Party Overview
 The Drop Party Protocol governs the interactions between players, the world, and the Solana blockchain. 
 
 ```
